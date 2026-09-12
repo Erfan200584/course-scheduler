@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>برنامه‌ریز انتخاب واحد</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --bg:#F3F5F3;
+    --surface:#FFFFFF;
+    --ink:#1B2130;
+    --muted:#636D7A;
+    --border:#DEE3E3;
+    --primary:#1E4B8F;
+    --primary-dark:#153a72;
+    --accent:#146B63;
+    --danger:#C1443C;
+    --danger-bg:#FCEEEC;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Vazirmatn',Tahoma,sans-serif;
+    line-height:1.7;
+  }
+  header{
+    background:var(--surface);
+    border-bottom:1px solid var(--border);
+    padding:18px 24px;
+    position:sticky;
+    top:0;
+    z-index:20;
+  }
+  header h1{
+    margin:0 0 4px;
+    font-size:20px;
+    font-weight:800;
+    letter-spacing:-.2px;
+  }
+  header p.sub{
+    margin:0;
+    font-size:13px;
+    color:var(--muted);
+  }
+  .header-controls{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    align-items:center;
+    margin-top:14px;
+  }
+  .file-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:var(--primary);
+    color:#fff;
+    border:none;
+    padding:9px 16px;
+    border-radius:var(--radius);
+    font-family:inherit;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+    transition:background .15s;
+  }
+  .file-btn:hover{background:var(--primary-dark);}
+  input[type=file]{display:none;}
+  #fileStatus{font-size:13px;color:var(--muted);}
+  .cap-field{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size:13px;
+    color:var(--muted);
+    background:var(--bg);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:6px 10px;
+  }
+  .cap-field input{
+    width:56px;
+    border:none;
+    background:transparent;
+    font-family:inherit;
+    font-size:14px;
+    color:var(--ink);
+    text-align:center;
+  }
+  .cap-field input:focus{outline:none;}
+  .gender-field{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:13px;
+    color:var(--muted);
+    background:var(--bg);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:6px 10px;
+  }
+  .gender-field label{
+    display:flex;
+    align-items:center;
+    gap:3px;
+    color:var(--ink);
+    cursor:pointer;
+  }
+  .gender-field.missing{border-color:var(--danger); background:var(--danger-bg); color:var(--danger);}
+
+  main{
+    display:grid;
+    grid-template-columns:360px 1fr;
+    gap:18px;
+    padding:20px;
+    max-width:1400px;
+    margin:0 auto;
+    align-items:start;
+  }
+  @media (max-width:900px){
+    main{grid-template-columns:1fr;}
+  }
+
+  .panel{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:16px;
+  }
+  .panel h2{
+    font-size:15px;
+    font-weight:700;
+    margin:0 0 10px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .panel h2 .count{
+    font-size:12px;
+    font-weight:600;
+    color:var(--muted);
+    background:var(--bg);
+    padding:1px 8px;
+    border-radius:20px;
+  }
+
+  #searchBox{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    font-family:inherit;
+    font-size:14px;
+    margin-bottom:12px;
+  }
+  #searchBox:focus{outline:2px solid var(--primary); outline-offset:1px;}
+
+  .hint{
+    font-size:13px;
+    color:var(--muted);
+    padding:10px 4px;
+  }
+
+  .course-card{
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:10px 12px;
+    margin-bottom:10px;
+  }
+  .course-card-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:8px;
+  }
+  .course-card-title{
+    font-size:14px;
+    font-weight:700;
+  }
+  .course-card-code{
+    font-size:11px;
+    color:var(--muted);
+    font-family:monospace;
+  }
+  .add-btn{
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    border-radius:8px;
+    padding:6px 12px;
+    font-family:inherit;
+    font-size:12px;
+    font-weight:600;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .add-btn:disabled{
+    background:#B7BEC2;
+    cursor:default;
+  }
+  .section-row{
+    font-size:12px;
+    color:var(--ink);
+    margin-top:8px;
+    padding-top:8px;
+    border-top:1px dashed var(--border);
+  }
+  .section-row:first-of-type{margin-top:10px;}
+  .section-prof{font-weight:600;}
+  .chips{margin-top:3px;display:flex;flex-wrap:wrap;gap:4px;}
+  .chip{
+    background:var(--bg);
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:2px 6px;
+    font-size:11px;
+    color:var(--muted);
+  }
+  .chip.exam{color:var(--danger); border-color:#F0C9C4;}
+
+  .selected-item{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:8px;
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:8px 12px;
+    margin-bottom:8px;
+    background:var(--bg);
+  }
+  .selected-item .swatch{
+    width:10px;height:10px;border-radius:3px;flex:none;
+  }
+  .selected-item .info{flex:1;min-width:0;}
+  .selected-item .name{font-size:13px;font-weight:700;}
+  .selected-item .meta{font-size:11px;color:var(--muted);}
+  .selected-item label.opt{
+    font-size:11px;
+    color:var(--muted);
+    display:flex;
+    align-items:center;
+    gap:3px;
+    white-space:nowrap;
+  }
+  .remove-btn{
+    background:none;
+    border:none;
+    color:var(--danger);
+    font-size:16px;
+    cursor:pointer;
+    line-height:1;
+    padding:2px 4px;
+  }
+
+  #generateBtn{
+    width:100%;
+    background:var(--primary);
+    color:#fff;
+    border:none;
+    padding:12px;
+    border-radius:var(--radius);
+    font-family:inherit;
+    font-size:15px;
+    font-weight:700;
+    cursor:pointer;
+    margin-top:6px;
+  }
+  #generateBtn:hover{background:var(--primary-dark);}
+  #generateBtn:disabled{background:#B7BEC2;cursor:default;}
+
+  #genStatus{
+    font-size:13px;
+    margin-top:10px;
+    padding:10px 12px;
+    border-radius:8px;
+    display:none;
+  }
+  #genStatus.ok{display:block;background:#EAF3EF;color:#1F5B44;}
+  #genStatus.warn{display:block;background:var(--danger-bg);color:var(--danger);}
+
+  /* grid: hours across the top, days as rows on the right */
+  .grid-wrap{overflow-x:auto;margin-bottom:16px;border:1px solid var(--border);border-radius:10px;}
+  .schedule-grid{display:inline-flex;flex-direction:column;min-width:100%;}
+  .grid-row{display:flex;flex-direction:row;}
+  .day-label{
+    flex:none;
+    width:78px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:12px;
+    font-weight:700;
+    background:var(--bg);
+    border-inline-start:1px solid var(--border);
+    position:sticky;
+    right:0;
+    z-index:2;
+  }
+  .grid-row:first-child .day-label{
+    background:var(--surface);
+    border-inline-start:none;
+  }
+  .hours-axis, .day-track{
+    position:relative;
+    flex:none;
+  }
+  .hours-axis{height:32px;background:var(--bg);}
+  .day-track{
+    height:74px;
+    border-top:1px solid var(--border);
+    background:repeating-linear-gradient(to left, transparent, transparent 59px, #F0F2F1 59px, #F0F2F1 60px);
+  }
+  .hour-tick{
+    position:absolute;
+    top:0;bottom:0;
+    border-inline-start:1px solid var(--border);
+  }
+  .hour-label{
+    position:absolute;
+    top:6px;
+    font-size:10.5px;
+    color:var(--muted);
+    transform:translateX(50%);
+    direction:ltr;
+  }
+  .block{
+    position:absolute;
+    top:5px;bottom:5px;
+    border-radius:7px;
+    color:#fff;
+    font-size:11px;
+    padding:5px 7px;
+    overflow:hidden;
+    line-height:1.4;
+  }
+  .block .b-name{font-weight:700;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .block .b-prof{opacity:.92;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .block .b-time{opacity:.9;display:block;direction:ltr;text-align:right;font-size:10.5px;}
+  .empty-grid-msg{
+    padding:40px 10px;
+    text-align:center;
+    color:var(--muted);
+    font-size:13px;
+  }
+
+  .result-item{
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:10px 12px;
+    margin-bottom:8px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+  }
+  .result-item.active{border-color:var(--primary); background:#F1F6FC;}
+  .result-item .r-main{flex:1;min-width:0;}
+  .result-item .r-title{font-size:13px;font-weight:700;}
+  .result-item .r-detail{font-size:11.5px;color:var(--muted); margin-top:2px;}
+  .view-btn{
+    background:var(--surface);
+    border:1px solid var(--primary);
+    color:var(--primary);
+    border-radius:8px;
+    padding:6px 12px;
+    font-size:12px;
+    font-weight:600;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .result-item.active .view-btn{background:var(--primary); color:#fff;}
+  .missing-tag{color:var(--danger);}
+
+  #resultsHeader{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:10px;
+  }
+  footer{
+    text-align:center;
+    font-size:11px;
+    color:var(--muted);
+    padding:20px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>برنامه‌ریز انتخاب واحد</h1>
+  <p class="sub">فایل اکسل انتخاب واحد رو بارگذاری کن، درس‌ها رو جست‌وجو و اضافه کن، بعد همه‌ی چیدمان‌های بدون تداخل رو ببین.</p>
+  <div class="header-controls">
+    <button class="file-btn" id="pickFileBtn">📄 بارگذاری فایل اکسل</button>
+    <input type="file" id="fileInput" accept=".xlsx,.xls">
+    <span id="fileStatus">هنوز فایلی بارگذاری نشده</span>
+    <span class="gender-field" id="genderField">
+      جنسیت:
+      <label><input type="radio" name="gender" value="مرد"> مرد</label>
+      <label><input type="radio" name="gender" value="زن"> زن</label>
+    </span>
+    <span class="cap-field">
+      سقف واحد:
+      <input type="number" id="capInput" min="0" placeholder="—">
+    </span>
+  </div>
+</header>
+
+<main>
+  <section class="panel">
+    <h2>جست‌وجوی درس <span class="count" id="courseCount"></span></h2>
+    <input id="searchBox" placeholder="نام یا شماره‌ی درس را وارد کن..." disabled>
+    <div id="searchResults"><div class="hint">اول فایل اکسل رو بارگذاری کن و جنسیت‌ت رو مشخص کن.</div></div>
+
+    <h2 style="margin-top:18px;">درس‌های انتخابی <span class="count" id="selectedCount">۰</span></h2>
+    <div id="selectedList"><div class="hint">هنوز درسی اضافه نکردی.</div></div>
+
+    <button id="generateBtn" disabled>ساخت همه‌ی چیدمان‌ها</button>
+    <div id="genStatus"></div>
+  </section>
+
+  <section class="panel">
+    <h2>پیش‌نمایش هفتگی</h2>
+    <div class="grid-wrap">
+      <div id="scheduleGrid"></div>
+    </div>
+    <div id="resultsHeader"></div>
+    <div id="resultsList"></div>
+  </section>
+</main>
+
+<footer>پردازش کاملاً توی مرورگر خودت انجام می‌شه؛ هیچ فایلی جایی آپلود نمی‌شه.</footer>
+
+<script>
+(function(){
+
+/* ---------------- normalization helpers ---------------- */
+function normalizeArabic(s){
+  if(s===undefined||s===null) return '';
+  return String(s).replace(/ي/g,'ی').replace(/ك/g,'ک').trim();
+}
+function normKey(s){
+  return normalizeArabic(s).replace(/[\s\u200c]/g,'');
+}
+
+const DAY_ORDER = ['شنبه','یک شنبه','دوشنبه','سه شنبه','چهارشنبه','پنج شنبه'];
+const DAY_LABEL = {'شنبه':'شنبه','یک شنبه':'یک‌شنبه','دوشنبه':'دوشنبه','سه شنبه':'سه‌شنبه','چهارشنبه':'چهارشنبه','پنج شنبه':'پنج‌شنبه'};
+const dayAlt = DAY_ORDER.slice().sort((a,b)=>b.length-a.length).join('|');
+const sessionRe = new RegExp('درس\\(([^)]*)\\):\\s*('+dayAlt+')\\s+(\\d{2}:\\d{2})-(\\d{2}:\\d{2})\\s*(?:مکان:\\s*(\\S*))?','g');
+const examRe = /امتحان\(([^)]*)\)\s*ساعت\s*:\s*(\d{2}:\d{2})-(\d{2}:\d{2})/;
+const examDateRe = /\d{4}\.\d{2}\.\d{2}/;
+
+function timeToMin(t){
+  const [h,m] = t.split(':').map(Number);
+  return h*60+m;
+}
+function overlap(s1,e1,s2,e2){ return s1<e2 && s2<e1; }
+
+function sessionsConflict(secA, secB){
+  for(const a of secA.sessions){
+    for(const b of secB.sessions){
+      if(a.day===b.day && overlap(timeToMin(a.start),timeToMin(a.end),timeToMin(b.start),timeToMin(b.end))) return true;
+    }
+  }
+  if(secA.exam && secB.exam && secA.exam.date && secB.exam.date && secA.exam.date===secB.exam.date){
+    if(overlap(timeToMin(secA.exam.start),timeToMin(secA.exam.end),timeToMin(secB.exam.start),timeToMin(secB.exam.end))) return true;
+  }
+  return false;
+}
+
+/* ---------------- state ---------------- */
+let COURSES = {};        // baseCode -> {code,name,sections:[...]}
+let COURSE_LIST = [];    // array for search
+let SELECTED = {};        // baseCode -> {code,name,sections,optional}
+let COLOR_ORDER = [];     // baseCode order for consistent colors
+const PALETTE = ['#1E4B8F','#146B63','#B4790A','#7A4FA0','#C1443C','#4E6E58','#0F6FB0','#8C5A2B','#5C6BC0','#2E7D32','#9B4F82','#3E7C8A'];
+let CURRENT_RESULTS = [];
+let ACTIVE_RESULT_IDX = -1;
+const MAX_RESULTS = 500;
+let GENDER = null; // 'مرد' یا 'زن'، تا انتخاب نشه جست‌وجو غیرفعاله
+
+function genderAllowed(sectionGender){
+  if(!sectionGender) return true; // اگه ستون خالی/نامشخص بود، محدود نکن
+  if(sectionGender==='مختلط') return true;
+  return sectionGender === GENDER;
+}
+
+document.querySelectorAll('input[name=gender]').forEach(r=>{
+  r.addEventListener('change', function(){
+    GENDER = this.value;
+    document.getElementById('genderField').classList.remove('missing');
+    updateSearchGate();
+    document.getElementById('searchBox').dispatchEvent(new Event('input'));
+    renderSelected();
+  });
+});
+
+function updateSearchGate(){
+  const ready = COURSE_LIST.length>0 && GENDER;
+  document.getElementById('searchBox').disabled = !ready;
+  if(COURSE_LIST.length>0 && !GENDER){
+    document.getElementById('searchResults').innerHTML = '<div class="hint">برای جست‌وجو، اول جنسیت‌ت رو از بالای صفحه مشخص کن.</div>';
+  }
+}
+
+/* ---------------- excel parsing ---------------- */
+document.getElementById('pickFileBtn').addEventListener('click', ()=> document.getElementById('fileInput').click());
+document.getElementById('fileInput').addEventListener('change', function(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  document.getElementById('fileStatus').textContent = 'در حال پردازش «'+file.name+'»...';
+  const reader = new FileReader();
+  reader.onload = function(evt){
+    try{
+      const data = new Uint8Array(evt.target.result);
+      const wb = XLSX.read(data, {type:'array'});
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, {header:1, defval:''});
+      parseRows(rows);
+    }catch(err){
+      console.error(err);
+      document.getElementById('fileStatus').textContent = 'خطا در خواندن فایل: '+err.message;
+    }
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+function findCol(headerNorm, matcher){
+  for(let i=0;i<headerNorm.length;i++){
+    if(matcher(headerNorm[i])) return i;
+  }
+  return -1;
+}
+
+function parseRows(rows){
+  if(!rows || rows.length<2){
+    document.getElementById('fileStatus').textContent = 'فایل خالی به نظر می‌رسه.';
+    return;
+  }
+  const header = rows[0];
+  const headerNorm = header.map(normKey);
+
+  const codeIdx = findCol(headerNorm, h=>h.includes('گروهدرس') || h.includes('شمارهگروه'));
+  const nameIdx = findCol(headerNorm, h=>h.includes('نامدرس'));
+  const unitsIdx = findCol(headerNorm, h=>h==='کل');
+  const profIdx = findCol(headerNorm, h=>h.includes('نامتاد') || h.includes('ناماستاد'));
+  const capIdx = findCol(headerNorm, h=>h.includes('ظرفیت'));
+  const regIdx = findCol(headerNorm, h=>h.includes('ثبتنامشده'));
+  const genderIdx = findCol(headerNorm, h=>h.includes('جنسیت'));
+  const timeIdx = findCol(headerNorm, h=>h.includes('زمان') && h.includes('ارائه'));
+
+  const missing = [];
+  if(codeIdx<0) missing.push('شماره و گروه درس');
+  if(nameIdx<0) missing.push('نام درس');
+  if(timeIdx<0) missing.push('زمان و مکان ارائه');
+  if(missing.length){
+    document.getElementById('fileStatus').textContent = 'ستون‌های زیر توی فایل پیدا نشد: '+missing.join('، ');
+    return;
+  }
+
+  COURSES = {};
+  let rowCount = 0;
+
+  for(let r=1;r<rows.length;r++){
+    const row = rows[r];
+    const fullCodeRaw = normalizeArabic(row[codeIdx]);
+    if(!fullCodeRaw) continue;
+    const baseCode = fullCodeRaw.split('_')[0];
+    const name = normalizeArabic(row[nameIdx]);
+    if(!name) continue;
+    const units = parseFloat(String(row[unitsIdx]).replace(',','.')) || 0;
+    const professor = normalizeArabic(profIdx>=0 ? row[profIdx] : '');
+    const capacity = capIdx>=0 ? row[capIdx] : '';
+    const registered = regIdx>=0 ? row[regIdx] : '';
+    const gender = genderIdx>=0 ? normalizeArabic(row[genderIdx]) : '';
+    const timeText = normalizeArabic(row[timeIdx]);
+
+    const sessions = [];
+    sessionRe.lastIndex = 0;
+    let m;
+    while((m = sessionRe.exec(timeText)) !== null){
+      sessions.push({day:m[2], start:m[3], end:m[4], location:m[5]||''});
+    }
+    let exam = null;
+    const em = examRe.exec(timeText);
+    if(em){
+      const dm = em[1].match(examDateRe);
+      exam = {date: dm?dm[0]:null, start:em[2], end:em[3]};
+    }
+    if(sessions.length===0) continue; // no schedule info, skip (e.g. thesis/project rows)
+
+    if(!COURSES[baseCode]) COURSES[baseCode] = {code:baseCode, name:name, sections:[]};
+    COURSES[baseCode].sections.push({
+      groupCode: fullCodeRaw, professor, units, capacity, registered, gender, sessions, exam
+    });
+    rowCount++;
+  }
+
+  COURSE_LIST = Object.values(COURSES);
+  document.getElementById('fileStatus').textContent = rowCount+' گروه درسی در '+COURSE_LIST.length+' درس بارگذاری شد ✓';
+  document.getElementById('courseCount').textContent = COURSE_LIST.length+' درس';
+  updateSearchGate();
+  if(GENDER){
+    document.getElementById('searchResults').innerHTML = '<div class="hint">برای جست‌وجو، نام یا شماره‌ی درس رو تایپ کن.</div>';
+  }
+  SELECTED = {}; COLOR_ORDER = [];
+  renderSelected();
+  renderGrid(null);
+  renderResultsList();
+}
+
+/* ---------------- search & add ---------------- */
+document.getElementById('searchBox').addEventListener('input', function(e){
+  const q = normKey(e.target.value);
+  const resultsEl = document.getElementById('searchResults');
+  if(!GENDER){ resultsEl.innerHTML = '<div class="hint">برای جست‌وجو، اول جنسیت‌ت رو از بالای صفحه مشخص کن.</div>'; return; }
+  if(!q){ resultsEl.innerHTML = '<div class="hint">برای جست‌وجو، نام یا شماره‌ی درس رو تایپ کن.</div>'; return; }
+  const matches = COURSE_LIST.filter(c =>
+    (normKey(c.code).includes(q) || normKey(c.name).includes(q)) &&
+    c.sections.some(s=>genderAllowed(s.gender))
+  ).slice(0,40);
+  if(matches.length===0){ resultsEl.innerHTML = '<div class="hint">چیزی پیدا نشد (یا فقط برای جنسیت مقابل ارائه شده).</div>'; return; }
+  resultsEl.innerHTML = '';
+  matches.forEach(c => resultsEl.appendChild(buildCourseCard(c)));
+});
+
+function buildCourseCard(course){
+  const div = document.createElement('div');
+  div.className = 'course-card';
+  const existing = SELECTED[course.code];
+  const visibleSections = course.sections.filter(s=>genderAllowed(s.gender));
+  const hiddenCount = course.sections.length - visibleSections.length;
+  // پیش‌فرض: اگه قبلاً اضافه شده، چک‌باکس‌ها با همون انتخاب قبلی پر می‌شن؛ وگرنه همه‌ی گروه‌های مجاز تیک‌خورده‌ان
+  const checkedSet = existing ? new Set(existing.sections.map(s=>s.groupCode)) : new Set(visibleSections.map(s=>s.groupCode));
+
+  div.innerHTML = `
+    <div class="course-card-top">
+      <div>
+        <div class="course-card-title">${course.name}</div>
+        <div class="course-card-code">${course.code} · ${visibleSections.length} گروه${hiddenCount?` (${hiddenCount} گروه ویژه‌ی جنسیت دیگه مخفی شد)`:''}</div>
+      </div>
+      <button class="add-btn">${existing?'بروزرسانی گروه‌ها':'+ افزودن درس'}</button>
+    </div>
+    <div class="section-row" style="border-top:none;margin-top:8px;padding-top:0;">
+      <label style="display:flex;align-items:center;gap:5px;font-weight:600;cursor:pointer;">
+        <input type="checkbox" class="select-all-cb" ${visibleSections.every(s=>checkedSet.has(s.groupCode))?'checked':''}>
+        انتخاب همه‌ی گروه‌ها
+      </label>
+    </div>
+    ${visibleSections.map((s,i) => `
+      <div class="section-row">
+        <label style="display:flex;align-items:flex-start;gap:6px;cursor:pointer;">
+          <input type="checkbox" class="group-cb" data-idx="${i}" ${checkedSet.has(s.groupCode)?'checked':''} style="margin-top:3px;flex:none;">
+          <span>
+            <span class="section-prof">${s.groupCode} — ${s.professor || 'بدون نام استاد'}</span>
+            ${s.units?` · ${s.units} واحد`:''}
+            ${(s.capacity!==''&&s.registered!=='')?` · ظرفیت ${s.registered}/${s.capacity}`:''}
+            <div class="chips">
+              ${s.sessions.map(se=>`<span class="chip">${DAY_LABEL[se.day]||se.day} ${se.start}-${se.end}</span>`).join('')}
+              ${s.exam ? `<span class="chip exam">امتحان ${s.exam.date?s.exam.date+' ':''}${s.exam.start}-${s.exam.end}</span>` : ''}
+            </div>
+          </span>
+        </label>
+      </div>
+    `).join('')}
+  `;
+
+  const selectAllCb = div.querySelector('.select-all-cb');
+  const groupCbs = Array.from(div.querySelectorAll('.group-cb'));
+  const addBtn = div.querySelector('.add-btn');
+
+  function syncSelectAll(){
+    const allChecked = groupCbs.every(cb=>cb.checked);
+    selectAllCb.checked = allChecked;
+  }
+  selectAllCb.addEventListener('change', function(){
+    groupCbs.forEach(cb=>cb.checked = selectAllCb.checked);
+  });
+  groupCbs.forEach(cb=>cb.addEventListener('change', syncSelectAll));
+
+  addBtn.addEventListener('click', function(){
+    const chosenSections = groupCbs.filter(cb=>cb.checked).map(cb=>visibleSections[+cb.dataset.idx]);
+    if(chosenSections.length===0){ alert('حداقل یک گروه/استاد رو انتخاب کن.'); return; }
+    const wasNew = !SELECTED[course.code];
+    const prevOptional = SELECTED[course.code] ? SELECTED[course.code].optional : false;
+    SELECTED[course.code] = {code:course.code, name:course.name, sections:chosenSections, optional:prevOptional};
+    if(wasNew) COLOR_ORDER.push(course.code);
+    renderSelected();
+    document.getElementById('searchBox').dispatchEvent(new Event('input'));
+  });
+  return div;
+}
+
+function courseColor(code){
+  const idx = COLOR_ORDER.indexOf(code);
+  return PALETTE[idx % PALETTE.length];
+}
+
+function renderSelected(){
+  const el = document.getElementById('selectedList');
+  const codes = Object.keys(SELECTED);
+  document.getElementById('selectedCount').textContent = codes.length;
+  document.getElementById('generateBtn').disabled = codes.length===0 || !GENDER;
+  if(codes.length===0){ el.innerHTML = '<div class="hint">هنوز درسی اضافه نکردی.</div>'; return; }
+  el.innerHTML = '';
+  codes.forEach(code=>{
+    const c = SELECTED[code];
+    const row = document.createElement('div');
+    row.className = 'selected-item';
+    row.innerHTML = `
+      <span class="swatch" style="background:${courseColor(code)}"></span>
+      <div class="info">
+        <div class="name">${c.name}</div>
+        <div class="meta">${c.sections.length} از ${(COURSES[code]?COURSES[code].sections.length:c.sections.length)} گروه انتخاب‌شده</div>
+      </div>
+      <label class="opt"><input type="checkbox" ${c.optional?'checked':''}> اختیاری</label>
+      <button class="remove-btn" title="حذف">✕</button>
+    `;
+    row.querySelector('.opt input').addEventListener('change', function(e){
+      SELECTED[code].optional = e.target.checked;
+    });
+    row.querySelector('.remove-btn').addEventListener('click', function(){
+      delete SELECTED[code];
+      COLOR_ORDER = COLOR_ORDER.filter(x=>x!==code);
+      renderSelected();
+      document.getElementById('searchBox').dispatchEvent(new Event('input'));
+    });
+    el.appendChild(row);
+  });
+}
+
+/* ---------------- schedule generation ---------------- */
+document.getElementById('generateBtn').addEventListener('click', generateSchedules);
+
+function generateSchedules(){
+  const statusEl = document.getElementById('genStatus');
+  if(!GENDER){
+    statusEl.className = 'warn';
+    statusEl.textContent = 'اول باید جنسیت‌ت رو از بالای صفحه مشخص کنی.';
+    return;
+  }
+  const rawList = Object.values(SELECTED);
+  // فیلتر ایمنی نهایی: فقط گروه‌های مجاز برای جنسیت انتخابی وارد محاسبه بشن
+  const list = rawList.map(c => ({...c, sections: c.sections.filter(s=>genderAllowed(s.gender))}));
+  const emptyMandatory = list.filter(c=>!c.optional && c.sections.length===0);
+  if(emptyMandatory.length){
+    statusEl.className = 'warn';
+    statusEl.innerHTML = 'درس‌های زیر برای جنسیت انتخابی هیچ گروهی ندارن: <b>'+emptyMandatory.map(c=>c.name).join('، ')+'</b><br>یا اون‌ها رو اختیاری/حذف کن، یا گروه دیگه‌ای براشون اضافه کن.';
+    return;
+  }
+
+  const cap = parseFloat(document.getElementById('capInput').value);
+  const hasCap = !isNaN(cap) && cap>0;
+
+  const results = [];
+  function backtrack(idx, chosen, totalUnits){
+    if(results.length >= MAX_RESULTS) return;
+    if(idx === list.length){
+      results.push(chosen.slice());
+      return;
+    }
+    const course = list[idx];
+    for(const sec of course.sections){
+      if(hasCap && totalUnits + sec.units > cap) continue;
+      let conflict = false;
+      for(const picked of chosen){
+        if(sessionsConflict(sec, picked.sec)){ conflict = true; break; }
+      }
+      if(conflict) continue;
+      chosen.push({code:course.code, name:course.name, sec});
+      backtrack(idx+1, chosen, totalUnits+sec.units);
+      chosen.pop();
+      if(results.length >= MAX_RESULTS) return;
+    }
+    if(course.optional){
+      backtrack(idx+1, chosen, totalUnits);
+    }
+  }
+  backtrack(0, [], 0);
+
+  CURRENT_RESULTS = results;
+  ACTIVE_RESULT_IDX = results.length ? 0 : -1;
+
+  if(results.length===0){
+    statusEl.className = 'warn';
+    statusEl.innerHTML = diagnoseNoResults(list);
+  } else {
+    statusEl.className = 'ok';
+    const capped = results.length>=MAX_RESULTS ? ' (نمایش محدود به '+MAX_RESULTS+' حالت اول)' : '';
+    statusEl.textContent = results.length + ' حالت بدون تداخل پیدا شد' + capped;
+  }
+  renderResultsList();
+  renderGrid(results.length ? results[0] : null);
+}
+
+function diagnoseNoResults(list){
+  const mandatory = list.filter(c=>!c.optional);
+  let msg = 'هیچ چیدمان بدون‌تداخلی پیدا نشد. ';
+  for(let i=0;i<mandatory.length;i++){
+    for(let j=i+1;j<mandatory.length;j++){
+      const a = mandatory[i], b = mandatory[j];
+      let allConflict = true;
+      for(const sa of a.sections){
+        for(const sb of b.sections){
+          if(!sessionsConflict(sa,sb)){ allConflict=false; break; }
+        }
+        if(!allConflict) break;
+      }
+      if(allConflict){
+        msg += `<br>⚠ همه‌ی گروه‌های «${a.name}» با همه‌ی گروه‌های «${b.name}» تداخل دارن — یکی از این دو رو اختیاری کن یا حذف کن.`;
+      }
+    }
+  }
+  msg += '<br>می‌تونی از تیک «اختیاری» کنار درس‌های کم‌اهمیت‌تر استفاده کنی تا در صورت تداخل، فقط همون‌ها حذف بشن.';
+  return msg;
+}
+
+/* ---------------- results list ---------------- */
+function renderResultsList(){
+  const headerEl = document.getElementById('resultsHeader');
+  const listEl = document.getElementById('resultsList');
+  if(CURRENT_RESULTS.length===0){
+    headerEl.innerHTML = '';
+    listEl.innerHTML = '<div class="hint">بعد از انتخاب درس‌ها، روی «ساخت همه‌ی چیدمان‌ها» بزن.</div>';
+    return;
+  }
+  headerEl.innerHTML = '<h2 style="margin:0">چیدمان‌های پیشنهادی <span class="count">'+CURRENT_RESULTS.length+'</span></h2>';
+  listEl.innerHTML = '';
+  CURRENT_RESULTS.forEach((combo, idx)=>{
+    const totalUnits = combo.reduce((s,c)=>s+(c.sec.units||0),0);
+    const selectedCodes = Object.keys(SELECTED);
+    const missing = selectedCodes.filter(code => !combo.some(c=>c.code===code)).map(code=>SELECTED[code].name);
+    const detail = combo.map(c=>`${c.name} — ${c.sec.groupCode} (${c.sec.professor||'—'})`).join('، ');
+
+    const row = document.createElement('div');
+    row.className = 'result-item' + (idx===ACTIVE_RESULT_IDX?' active':'');
+    row.innerHTML = `
+      <div class="r-main">
+        <div class="r-title">حالت ${idx+1} — ${totalUnits} واحد ${missing.length?`<span class="missing-tag">(بدون ${missing.join('، ')})</span>`:''}</div>
+        <div class="r-detail">${detail}</div>
+      </div>
+      <button class="view-btn">نمایش</button>
+    `;
+    row.querySelector('.view-btn').addEventListener('click', ()=>{
+      ACTIVE_RESULT_IDX = idx;
+      renderGrid(combo);
+      renderResultsList();
+      document.getElementById('scheduleGrid').scrollIntoView({behavior:'smooth', block:'start'});
+    });
+    listEl.appendChild(row);
+  });
+}
+
+/* ---------------- weekly grid (hours horizontal at top, days as rows on the right) ---------------- */
+function renderGrid(combo){
+  const gridEl = document.getElementById('scheduleGrid');
+  if(!combo || combo.length===0){
+    gridEl.innerHTML = '<div class="empty-grid-msg">درسی برای نمایش انتخاب نشده.</div>';
+    return;
+  }
+  let minMin = 24*60, maxMin = 0;
+  combo.forEach(c=>c.sec.sessions.forEach(se=>{
+    minMin = Math.min(minMin, timeToMin(se.start));
+    maxMin = Math.max(maxMin, timeToMin(se.end));
+  }));
+  // کلاس‌ها معمولاً از ۸ شروع می‌شن؛ فقط رند به نزدیک‌ترین ساعت، بدون حاشیه‌ی اضافه
+  minMin = Math.max(0, Math.floor(minMin/60)*60);
+  maxMin = Math.min(24*60, Math.ceil(maxMin/60)*60);
+  if(maxMin<=minMin) maxMin = minMin+60;
+  const totalMin = maxMin - minMin;
+  const pxPerMin = 2.6;
+  const trackWidth = totalMin * pxPerMin;
+
+  function posFromTime(min){ return (min-minMin)*pxPerMin; } // distance from the right/start edge
+
+  let hoursHtml = `<div class="hours-axis" style="width:${trackWidth}px">`;
+  for(let t=minMin; t<=maxMin; t+=60){
+    const pos = posFromTime(t);
+    hoursHtml += `<span class="hour-tick" style="right:${pos}px"></span>`;
+    hoursHtml += `<span class="hour-label" style="right:${pos}px">${String(Math.floor(t/60)).padStart(2,'0')}:00</span>`;
+  }
+  hoursHtml += '</div>';
+
+  let html = '<div class="schedule-grid">';
+  html += `<div class="grid-row"><div class="day-label">روز / ساعت</div>${hoursHtml}</div>`;
+
+  DAY_ORDER.forEach(day=>{
+    let trackHtml = `<div class="day-track" style="width:${trackWidth}px">`;
+    combo.forEach(c=>{
+      c.sec.sessions.filter(se=>se.day===day).forEach(se=>{
+        const right = posFromTime(timeToMin(se.start));
+        const width = posFromTime(timeToMin(se.end)) - right;
+        trackHtml += `<div class="block" style="right:${right}px;width:${width}px;background:${courseColor(c.code)}">
+          <span class="b-name">${c.name}</span>
+          <span class="b-prof">${c.sec.groupCode} — ${c.sec.professor||''}</span>
+          <span class="b-time">${se.start}-${se.end}</span>
+        </div>`;
+      });
+    });
+    trackHtml += '</div>';
+    html += `<div class="grid-row"><div class="day-label">${DAY_LABEL[day]}</div>${trackHtml}</div>`;
+  });
+  html += '</div>';
+  gridEl.innerHTML = html;
+}
+
+renderGrid(null);
+renderResultsList();
+
+})();
+</script>
+</body>
+</html>
